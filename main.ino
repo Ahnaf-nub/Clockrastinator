@@ -1,45 +1,42 @@
 #include "DHT.h"
-#include <Servo.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <RTClib.h>
 #include <Wire.h>
 
-#define DHTPIN 18
-#define button 16
 #define buzzer 15
+#define button 16
+#define DHTPIN 18
+#define ldr 28
 #define DHTTYPE DHT22
 
 bool state = false; // Initial state set to false
 bool lastButtonState = HIGH; // To track the previous button state
-Servo servo;
 DHT dht(DHTPIN, DHTTYPE);
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 RTC_DS1307 rtc;
 
+int light = 0;
+int lightThreshold = 500; // Adjust this value as needed for your environment
 unsigned long pomodoroStartTime;
 unsigned long pomodoroDuration = 25 * 60 * 1000; // 25 minutes in milliseconds
 bool pomodoroActive = false;
 
 void setup() {
-  Serial.begin(115200);
   pinMode(button, INPUT_PULLUP);
+  pinMode(ldr, INPUT);
   pinMode(buzzer, OUTPUT);
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    Serial.println(F("SSD1306 allocation failed"));
     while (true);
   }
   if (!rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    Serial.flush();
     abort();
   }
   if (!rtc.isrunning()) {
-    Serial.println("RTC is NOT running, let's set the time!");
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
-  servo.attach(28);
   dht.begin();
+  display.setTextColor(WHITE);
 }
 
 void pomodoro() {
@@ -48,7 +45,6 @@ void pomodoro() {
 
   display.clearDisplay();
   display.setTextSize(1);
-  display.setTextColor(WHITE);
   display.setCursor(0, 10);
   display.print("Pomodoro Timer Started");
   display.display();
@@ -64,7 +60,6 @@ void displayPomodoroTimeRemaining() {
     digitalWrite(buzzer, HIGH);
     display.clearDisplay();
     display.setTextSize(2);
-    display.setTextColor(WHITE);
     display.setCursor(10, 25);
     display.print("Time's up!");
     display.display();
@@ -76,12 +71,11 @@ void displayPomodoroTimeRemaining() {
 
   display.clearDisplay();
   display.setTextSize(1);
-  display.setTextColor(WHITE);
   display.setCursor(0, 10);
   display.print("Pomodoro Timer Active");
-  display.setCursor(0, 30);
-  display.print("Time remaining: ");
-  display.setCursor(0, 40);
+  display.setCursor(20, 30);
+  display.print("Time remaining");
+  display.setCursor(45, 40);
   display.print(minutesRemaining);
   display.print("m ");
   display.print(secondsRemaining);
@@ -103,25 +97,34 @@ void displayOtherInfo() {
   display.print("Temperature: ");
   display.setCursor(80, 10);
   display.print(temperature);
+  display.setCursor(110, 10);
+  display.print("*C");
   display.setCursor(0, 20);
   display.print("Humidity: ");
   display.setCursor(80, 20);
-  display.print(humidity);
-  display.setCursor(15, 30);
+  display.print(int(humidity));
+  display.setCursor(95, 20);
+  display.print("%");
+  display.setCursor(15, 35);
   display.print(now.toString(buf));
-  display.setCursor(0, 40);
+  display.setCursor(30, 45);
   display.print("Time: ");
-  display.setCursor(50, 40);
+  display.setCursor(60, 45);
   display.print(now.toString(buf1));
   display.display();
 }
 
 void loop() {
-  bool buttonState = digitalRead(button); // Read the current button state
+  bool buttonState = digitalRead(button); 
+  light = analogRead(ldr);
   if (buttonState == LOW && lastButtonState == HIGH) { // Button press detected
     state = !state; // Toggle the state
     if (state) {
-      pomodoro(); // Start Pomodoro if state is true
+      if (light > lightThreshold) { // Check if there is sufficient light
+        pomodoro(); // Start Pomodoro if state is true and light is sufficient
+      } else {
+        state = false; // Reset state to false if light is not sufficient
+      }
     } else {
       pomodoroActive = false; // Stop Pomodoro if state is false
     }
