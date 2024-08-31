@@ -4,6 +4,9 @@
 
 This project features a clock built with a Raspberry Pi Pico W. It utilizes an OLED display to show real-time information, including the current time, date, temperature, and humidity. Additionally, the system includes an LDR sensor to monitor light levels and a pushbutton to activate a Pomodoro timer when light conditions are met.
 
+**Try it out at: https://wokwi.com/projects/405395741064294401**
+![image](https://github.com/user-attachments/assets/f2f0e83c-eab3-49fe-861b-642a6931525d)
+
 ## Features
 
 - **Current Time and Date:** Displayed on the OLED screen.
