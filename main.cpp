@@ -4,7 +4,7 @@
 #include <RTClib.h>
 #include <Wire.h>
 
-#define buzzer 2
+#define buzzer 1
 #define button 21
 #define DHTPIN 22
 
@@ -101,42 +101,52 @@ void displayOtherInfo() {
 
 void displayPomodoroTimeRemaining() {
   unsigned long elapsedTime = millis() - pomodoroStartTime;
-  unsigned long remainingTime = pomodoroDuration - elapsedTime;
-
+  long remainingTime = pomodoroDuration - elapsedTime; // Ensure this is signed to handle negative times
+  
   if (remainingTime <= 0) {
+    remainingTime = 0; // Clamp the remaining time to 0 to prevent negative values
     pomodoroActive = false;
     state = false; // Set state to false when time is up
+    
     display.clearDisplay();
     display.setTextSize(2);
     display.setCursor(10, 25);
     display.print("Time's up!");
-    delay(1000);  // Brief delay before showing other info
-
-    // Buzz the buzzer for 1 second when time is up
+    display.display();
     digitalWrite(buzzer, HIGH);
     delay(1000);
     digitalWrite(buzzer, LOW);
 
     displayOtherInfo();  // Display other info after Pomodoro ends
-    display.display();
     return;
   }
 
   unsigned long minutesRemaining = remainingTime / 60000;
   unsigned long secondsRemaining = (remainingTime % 60000) / 1000;
-
+  
+  // Calculate the progress as a percentage
+  float progress = (float)elapsedTime / pomodoroDuration; // Progress fraction (0.0 to 1.0)
+  int progressBarWidth = 100;  // Width of the progress bar (max is 100 pixels)
+  int progressBarFilled = (int)(progress * progressBarWidth); // Calculate the filled portion of the bar
+  
+  // Display the remaining Pomodoro time and animation
   display.clearDisplay();
   display.setTextSize(1);
   display.setCursor(0, 10);
   display.print("Pomodoro Timer Active");
-  display.setCursor(20, 25);
+  display.setCursor(20, 20);
   display.print("Time remaining");
   display.setTextSize(2);
-  display.setCursor(20, 45);
+  display.setCursor(20, 35);
   display.print(minutesRemaining);
   display.print("m ");
   display.print(secondsRemaining);
   display.print("s");
+  
+  // Draw the progress bar
+  display.drawRect(10, 55, progressBarWidth, 5, WHITE); // Draw the outline of the bar
+  display.fillRect(10, 55, progressBarFilled, 5, WHITE); // Fill the bar based on progress
+  
   display.display();
 }
 
