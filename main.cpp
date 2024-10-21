@@ -12,9 +12,9 @@
 #define NUM_STATES 6       // Number of discrete states for the ball and paddle positions
 #define NUM_ACTIONS 3      // 0: Stay, 1: Move up, 2: Move down
 float qTable[NUM_STATES][NUM_ACTIONS]; // Q-table
-float learningRate = 0.1;
-float discountFactor = 0.8;
-float explorationRate = 0.1;
+float learningRate = 0.2;
+float discountFactor = 0.9;
+float explorationRate = 0.2;
 float explorationDecay = 0.995;
 
 bool state = false; // Initial state set to false
@@ -224,7 +224,6 @@ void setup() {
     while (true);
   }
 
-  // Initialize RTC
   if (!rtc.begin()) {
     abort();
   }
@@ -234,6 +233,15 @@ void setup() {
   dht.begin();
   display.setTextColor(WHITE);
   display.clearDisplay();
+  int melody[] = {262, 294, 330, 349, 392, 440, 494, 523};  // Notes in the melody (C4, D4, E4, F4, G4, A4, B4, C5)
+  int noteDurations[] = {4, 4, 4, 4, 4, 4, 4, 4};  // Note durations (4 = quarter note, 8 = eighth note, etc.)
+
+  for (int thisNote = 0; thisNote < 8; thisNote++) {
+    int noteDuration = 1000 / noteDurations[thisNote];
+    tone(buzzer, melody[thisNote], noteDuration);
+    delay(noteDuration * 1.30);
+    noTone(buzzer);
+  }
 }
 
 void drawAnimatedClock(int x, int y) {
@@ -315,10 +323,15 @@ void displayPomodoroTimeRemaining() {
     display.setCursor(10, 25);
     display.print("Time's up!");
     display.display();
-    digitalWrite(buzzer, HIGH);
-    delay(1000);
-    digitalWrite(buzzer, LOW);
+    int melody[] = {523, 494, 440, 392, 349, 330, 294, 262};  // Notes in the melody (C5, B4, A4, G4, F4, E4, D4, C4)
+    int noteDurations[] = {4, 4, 4, 4, 4, 4, 4, 4};  // Note durations (4 = quarter note, 8 = eighth note, etc.)
 
+    for (int thisNote = 0; thisNote < 8; thisNote++) {
+      int noteDuration = 1000 / noteDurations[thisNote];
+      tone(buzzer, melody[thisNote], noteDuration);
+      delay(noteDuration * 1.30);  // Pause between notes
+      noTone(buzzer);  // Stop the tone playing
+    }
     displayOtherInfo();  // Display other info after Pomodoro ends
     return;
   }
@@ -356,7 +369,6 @@ void displayPomodoroTimeRemaining() {
 
 void checkButtonPressForPaddle() {
   bool buttonState = digitalRead(button);
-
   // If the button is pressed (LOW state due to pull-up resistor), paddle moves up
   if (buttonState == HIGH) {
     paddleMovingUp = true;
@@ -367,7 +379,6 @@ void checkButtonPressForPaddle() {
 
 void loop() {
   int ldrValue = digitalRead(ldr);
-
   // Check if the light is not detected (ldr == 1) to activate the Pong game
   if (ldrValue == 1) {
     if (!gameActive) {
